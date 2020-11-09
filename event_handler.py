@@ -64,7 +64,7 @@ def lambda_handler(event, context):
             logStreamName=log_event['logStream'],
             startFromHead=True,
             startTime=log_event['timestamp'] - 60,
-            endTime=log_event['timestamp'],
+            endTime=log_event['timestamp'] + 60,
             filter_pattern="[ip, id, user, timestamp, request, status_code=5*, size]"
         )
         # 5XXエラーごとにアプリログの取得とRedmine/SNSへの通知を行う
