@@ -69,14 +69,14 @@ def lambda_handler(event, context):
             endTime=log_event['timestamp'],
             filter_pattern="[ip, id, user, timestamp, request, status_code=5*, size]"
         )
-
+        # 5XXエラーごとにアプリログの取得とRedmine/SNSへの通知を行う
         for error_log in response['events']:
             logger.info(f"Get Error Log: {error_log['eventID']}")
-            error_log_dict = RE_FORMAT.match(error_log['message']).groupdict()
-            app_log = get_application_log(error_log_dict)
+            formatted_error = RE_FORMAT.match(error_log['message']).groupdict()
+            app_log = get_application_log(formatted_error)
             issue = create_redmine_ticket(error_log, app_log)
             logger.info(f"Create Redmine Issue:{issue['id']}")
-            send_sns_message(error_log_dict)
+            send_sns_message(formatted_error)
 
 
 def create_redmine_ticket(error_log, app_log):
@@ -90,26 +90,26 @@ def create_redmine_ticket(error_log, app_log):
     return issue
 
 
-def get_application_log(error_log_dict):
+def get_application_log(formatted_error):
     response = cw_logs.filter_log_events(
         logGroupName=APP_LOG_GROUP,
-        logStreamName=error_log_dict['logStream'],
+        logStreamName=formatted_error['logStream'],
         startFromHead=True,
-        startTime=error_log_dict['timestamp'] - 60,
-        endTime=error_log_dict['timestamp'] + 60
+        startTime=formatted_error['timestamp'] - 60,
+        endTime=formatted_error['timestamp'] + 60
     )
     return response
 
 
-def send_sns_message(error_log_dict):
+def send_sns_message(formatted_error):
     # SNSに送るデータの作成
-    date = datetime.datetime.fromtimestamp(int(str(error_log_dict["timestamp"])[:10])) + datetime.timedelta(hours=9)
+    date = datetime.datetime.fromtimestamp(int(str(formatted_error["timestamp"])[:10])) + datetime.timedelta(hours=9)
     sns_body = {}
     sns_body["default"] = ""
-    sns_body["default"] += "LogStream : " + error_log_dict["logStreamName"] + "\n"
+    sns_body["default"] += "LogStream : " + formatted_error["logStreamName"] + "\n"
     sns_body["default"] += "Time : " + date.strftime('%Y-%m-%d %H:%M:%S') + "\n"
-    sns_body["default"] += "EventID : " + error_log_dict['eventId'] + "\n"
-    sns_body["default"] += "Message : " + error_log_dict['message'] + "\n"
+    sns_body["default"] += "EventID : " + formatted_error['eventId'] + "\n"
+    sns_body["default"] += "Message : " + formatted_error['message'] + "\n"
 
     topic = SNS_ARN
     subject = "5XX ERROR OCCURED!!"
