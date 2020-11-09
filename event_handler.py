@@ -112,7 +112,7 @@ def send_sns_message(error_log_dict):
     sns_body["default"] += "Message : " + error_log_dict['message'] + "\n"
 
     topic = SNS_ARN
-    subject = "5XX ERROR"
+    subject = "5XX ERROR OCCURED!!"
     sns.publish(
         TopicArn=topic,
         Message=json.dumps(sns_body, ensure_ascii=False),
