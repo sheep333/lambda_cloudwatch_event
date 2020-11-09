@@ -58,9 +58,7 @@ def lambda_handler(event, context):
     payload = json.loads(uncompressed_payload)
 
     for log_event in payload['logEvents']:
-
         # logイベント前の1分間に他の5XXエラーがないかを確認
-
         response = cw_logs.filter_log_events(
             logGroupName=ACCESS_LOG_GROUP,
             logStreamName=log_event['logStream'],
