@@ -40,7 +40,7 @@ def lambda_handler(event, context):
             "text": f"Redmineのチケットリンク: {REDMINE_URL}/issues/{issue.id}"
         }
     }
-    res = post_slack(error_log)
+    res = post_slack(error_log, extra_blocks=[redmine_blocks])
 
 
 def create_redmine_ticket(error_log, app_log):
