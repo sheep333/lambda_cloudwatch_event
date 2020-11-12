@@ -29,8 +29,8 @@ def lambda_handler(event, context):
     error_log = event["detail"]["message"]
     response = get_application_log(event)
     app_log = ''
-    for res in response:
-        app_log += f"{res['logEvents']['message']}\n\n"
+    for event in response['events']:
+        app_log += f"{event['timestamp'] event['message']}\n\n"
     issue = create_redmine_ticket(error_log, app_log)
     logger.info(f"Create Redmine Issue:{issue['id']}")
     redmine_blocks = {
@@ -65,17 +65,14 @@ def get_application_log(event):
                 and log_stream['lastEventTimestamp'] >　event_time:
             check_logstreams.append(log_stream)
 
-    app_logs = []
-    for logstream in check_logstreams:
-        response = cw_logs.filter_log_events(
-            logGroupName=APP_LOG_GROUP,
-            logStreamName=logstream['logStreamName'],
-            startFromHead=True,
-            startTime=event_time - 60,
-            endTime=event_time + 60
-        )
-        app_logs.append(response)
-    return app_logs
+    response = cw_logs.filter_log_events(
+        logGroupName=APP_LOG_GROUP,
+        logStreamName=check_logstreams,
+        startFromHead=True,
+        startTime=event_time - 60,
+        endTime=event_time + 60
+    )
+    return response
 
 
 def post_slack(message, extra_blocks=[]):
