@@ -64,6 +64,8 @@ def get_application_log(event):
         if log_stream['firstEventTimestamp'] < event_time \
                 and log_stream['lastEventTimestamp'] >　event_time:
             check_logstreams.append(log_stream)
+
+    app_logs = []
     for logstream in check_logstreams:
         response = cw_logs.filter_log_events(
             logGroupName=APP_LOG_GROUP,
@@ -72,7 +74,8 @@ def get_application_log(event):
             startTime=event_time - 60,
             endTime=event_time + 60
         )
-    return response
+        app_logs.append(response)
+    return app_logs
 
 
 def post_slack(message, extra_blocks=[]):
